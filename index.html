@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Población Escolar | Colegio Los Ángeles</title>
+<title>Población Escolar | Grupo Educativo Los Ángeles</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   :root{
@@ -45,9 +45,11 @@
     display: flex; align-items: center; gap: 8px;
   }
   .tab-btn:hover { background: #f9fafb; }
+  
+  /* CLASES ACTIVAS CORREGIDAS */
   .tab-btn.active { background: var(--azul); color: #fff; border-color: var(--azul); box-shadow: 0 8px 20px rgba(11,61,145,.3);}
-  .tab-btn.active.bajas { background: var(--error); border-color: var(--error); box-shadow: 0 8px 20px rgba(220,38,38,.3);}
-  .tab-btn.active.comparativo { background: var(--morado); border-color: var(--morado); box-shadow: 0 8px 20px rgba(124,58,237,.3);}
+  .tab-btn.active-baja { background: var(--error); color: #fff; border-color: var(--error); box-shadow: 0 8px 20px rgba(220,38,38,.3);}
+  .tab-btn.active-comp { background: var(--morado); color: #fff; border-color: var(--morado); box-shadow: 0 8px 20px rgba(124,58,237,.3);}
   
   /* CONTENIDO DE PESTAÑAS */
   .tab-content { display: none; }
@@ -252,9 +254,10 @@
 
   <!-- MENÚ DE PESTAÑAS -->
   <div class="tabs-container">
+    <!-- Nota: Ya no usamos onclick aquí, lo haremos con JS limpio -->
     <button class="tab-btn active" id="tabBtnActivos" onclick="cambiarTab('activos')">👨‍🎓 Población Activa</button>
-    <button class="tab-btn bajas" id="tabBtnBajas" onclick="cambiarTab('bajas')">📉 Historial de Bajas</button>
-    <button class="tab-btn comparativo" id="tabBtnComparativo" onclick="cambiarTab('comparativo')">📊 Comparativo de Ciclos</button>
+    <button class="tab-btn" id="tabBtnBajas" onclick="cambiarTab('bajas')">📉 Historial de Bajas</button>
+    <button class="tab-btn" id="tabBtnComparativo" onclick="cambiarTab('comparativo')">📊 Comparativo de Ciclos</button>
   </div>
 
   <!-- ========================================== -->
@@ -373,7 +376,7 @@
         </div>
       </div>
 
-      <!-- NUEVO: Análisis Estadístico -->
+      <!-- Análisis Estadístico -->
       <div class="stat-box" id="statAnalysis">
         <!-- Se llena dinámicamente -->
       </div>
@@ -382,7 +385,7 @@
 
 </div>
 
-<footer>© Colegio Mexicano Los Ángeles · Sistema de Población Escolar</footer>
+<footer>© Grupo Educativo Los Ángeles · Sistema de Población Escolar</footer>
 
 <!-- BOTONES FLOTANTES -->
 <div class="fab-container">
@@ -430,9 +433,8 @@
             </select>
           </label>
           <label>Grupo
-            <select name="grupo" id="selectGrupo" required disabled>
-              <option value="">Selecciona un grado primero</option>
-            </select>
+            <select name="grupoSelect" id="selectGrupo" disabled style="display:none;"></select>
+            <input name="grupo" id="inputGrupo" required maxlength="30" placeholder="Ej. A, B, TM" />
           </label>
         </div>
 
@@ -534,6 +536,9 @@ let registros = [];
 let registrosBajas = [];
 let charts = {};
 
+// Niveles especiales para ENGLISHDIVISION
+const NIVELES_ENGLISH = ['INGLES', 'CHINO MANDARIN', 'FRANCES'];
+
 // DATOS HISTÓRICOS FIJOS
 const HISTORICOS = {
   '2023-2024': 3437,
@@ -551,12 +556,19 @@ async function apiGet(params = {}) {
 async function cargarDatos() {
   try {
     const data = await apiGet({ action: 'listar' });
-    registros = (data.rows || []).map(r => ({
-      rowIndex: r.rowIndex, timestamp: r.timestamp, unidad: r.unidad || '', nivel: r.nivel || '',
-      grado: r.grado || '', grupo: r.grupo || '', hombres: Number(r.hombres) || 0,
-      mujeres: Number(r.mujeres) || 0, total: Number(r.total) || (Number(r.hombres)||0)+(Number(r.mujeres)||0),
-      ciclo: r.ciclo || '2026-2027'
-    }));
+    
+    // Filtramos los datos para unificar "LOS ANGELES ENGLISHVISION" en "LOS ANGELES ENGLISHDIVISION"
+    registros = (data.rows || []).map(r => {
+      let u = r.unidad || '';
+      if (u === 'LOS ANGELES ENGLISHVISION') u = 'LOS ANGELES ENGLISHDIVISION';
+      
+      return {
+        rowIndex: r.rowIndex, timestamp: r.timestamp, unidad: u, nivel: r.nivel || '',
+        grado: r.grado || '', grupo: r.grupo || '', hombres: Number(r.hombres) || 0,
+        mujeres: Number(r.mujeres) || 0, total: Number(r.total) || (Number(r.hombres)||0)+(Number(r.mujeres)||0),
+        ciclo: r.ciclo || '2026-2027'
+      };
+    });
 
     const dataBajas = await apiGet({ action: 'listarBajas' });
     registrosBajas = (dataBajas.rows || []).map(r => ({
@@ -583,32 +595,32 @@ async function cargarDatos() {
 }
 
 // ==========================================
-// NAVEGACIÓN DE PESTAÑAS
+// NAVEGACIÓN DE PESTAÑAS (CORREGIDO)
 // ==========================================
 function cambiarTab(tab) {
+  // 1. Ocultar todos los contenidos y quitar clases activas a los botones
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => {
+    el.classList.remove('active');
+    el.classList.remove('active-baja');
+    el.classList.remove('active-comp');
+  });
   
+  // 2. Mostrar la pestaña seleccionada y aplicar la clase correcta
   if (tab === 'activos') {
     $('tabActivos').classList.add('active');
     $('tabBtnActivos').classList.add('active');
     $('globalFiltersBar').style.display = 'flex';
   } else if (tab === 'bajas') {
     $('tabBajas').classList.add('active');
-    $('tabBtnBajas').classList.add('active');
-    $('tabBtnBajas').style.background = 'var(--error)'; 
+    $('tabBtnBajas').classList.add('active-baja');
     $('globalFiltersBar').style.display = 'flex';
   } else {
     $('tabComparativo').classList.add('active');
-    $('tabBtnComparativo').classList.add('active');
-    $('tabBtnComparativo').style.background = 'var(--morado)'; 
+    $('tabBtnComparativo').classList.add('active-comp');
     $('globalFiltersBar').style.display = 'none'; 
     renderComparativo();
   }
-  
-  if (tab !== 'activos') $('tabBtnActivos').style.background = '#fff';
-  if (tab !== 'bajas') $('tabBtnBajas').style.background = '#fff';
-  if (tab !== 'comparativo') $('tabBtnComparativo').style.background = '#fff';
 }
 
 // ==========================================
@@ -645,25 +657,21 @@ function aplicarFiltroGlobal() {
 }
 
 // ==========================================
-// COMPARATIVO DE CICLOS CON DATOS HISTÓRICOS
+// COMPARATIVO DE CICLOS
 // ==========================================
 function renderComparativo() {
-  // 1. Calcular el total del ciclo actual (2026-2027) sumando los registros de la BD
   let totalActual = 0;
   registros.forEach(r => {
     if (r.ciclo === '2026-2027') totalActual += r.total;
   });
 
-  // 2. Unir históricos con el actual
   const dataCiclos = { ...HISTORICOS, '2026-2027': totalActual };
   const ciclos = Object.keys(dataCiclos).sort();
   
-  // 3. Renderizar Tarjetas
   const container = $('compCardsContainer');
   container.innerHTML = '';
   const colors = ['#0b3d91', '#1450b8', '#7c3aed', '#f4b400', '#16a34a'];
   
-  // Encontrar el pico máximo
   let maxTotal = 0;
   ciclos.forEach(c => { if(dataCiclos[c] > maxTotal) maxTotal = dataCiclos[c]; });
 
@@ -680,7 +688,6 @@ function renderComparativo() {
     `;
   });
 
-  // 4. Renderizar Gráfico de Barras
   if (charts['chComparativo']) charts['chComparativo'].destroy();
   charts['chComparativo'] = new Chart($('chComparativo'), {
     type: 'bar',
@@ -701,7 +708,6 @@ function renderComparativo() {
     }
   });
 
-  // 5. Análisis Estadístico (Texto)
   const statContainer = $('statAnalysis');
   let statHTML = '<strong>Análisis de Crecimiento:</strong><br><br>';
   
@@ -926,54 +932,87 @@ function inicializarModalNuevo() {
   $('selectUnidad').innerHTML = '<option value="">Selecciona…</option>' + unidades.map(u => `<option value="${u}">${u}</option>`).join('');
   $('selectNivel').innerHTML = '<option value="">Selecciona una unidad primero</option>'; $('selectNivel').disabled = true;
   $('selectGrado').innerHTML = '<option value="">Selecciona un nivel primero</option>'; $('selectGrado').disabled = true;
-  $('selectGrupo').innerHTML = '<option value="">Selecciona un grado primero</option>'; $('selectGrupo').disabled = true;
+  
+  $('selectGrupo').style.display = 'none';
+  $('inputGrupo').style.display = 'block';
+  $('inputGrupo').value = '';
 }
+
 $('selectUnidad').addEventListener('change', (e) => {
   const u = e.target.value;
   $('selectGrado').innerHTML = '<option value="">Selecciona un nivel primero</option>'; $('selectGrado').disabled = true;
-  $('selectGrupo').innerHTML = '<option value="">Selecciona un grado primero</option>'; $('selectGrupo').disabled = true;
+  $('inputGrupo').value = '';
+  
   if(!u) { $('selectNivel').innerHTML = '<option value="">Selecciona una unidad primero</option>'; $('selectNivel').disabled = true; }
   else {
-    const niveles = [...new Set(registros.filter(r => r.unidad === u).map(r => r.nivel))].sort();
+    let niveles = [];
+    if (u === 'LOS ANGELES ENGLISHDIVISION') {
+      niveles = NIVELES_ENGLISH;
+    } else {
+      niveles = [...new Set(registros.filter(r => r.unidad === u).map(r => r.nivel))].sort();
+    }
     $('selectNivel').innerHTML = '<option value="">Selecciona…</option>' + niveles.map(n => `<option value="${n}">${n}</option>`).join('');
     $('selectNivel').disabled = false;
   }
 });
+
 $('selectNivel').addEventListener('change', (e) => {
   const u = $('selectUnidad').value, n = e.target.value;
-  $('selectGrupo').innerHTML = '<option value="">Selecciona un grado primero</option>'; $('selectGrupo').disabled = true;
-  if(!n) { $('selectGrado').innerHTML = '<option value="">Selecciona un nivel primero</option>'; $('selectGrado').disabled = true; }
-  else {
-    const grados = [...new Set(registros.filter(r => r.unidad === u && r.nivel === n).map(r => r.grado))].sort((a,b)=>a-b);
-    $('selectGrado').innerHTML = '<option value="">Selecciona…</option>' + grados.map(g => `<option value="${g}">${g}</option>`).join('');
-    $('selectGrado').disabled = false;
-  }
-});
-$('selectGrado').addEventListener('change', (e) => {
-  const u = $('selectUnidad').value, n = $('selectNivel').value, g = e.target.value;
-  if(!g) { $('selectGrupo').innerHTML = '<option value="">Selecciona un grado primero</option>'; $('selectGrupo').disabled = true; }
-  else {
-    const grupos = [...new Set(registros.filter(r => r.unidad === u && r.nivel === n && String(r.grado) === String(g)).map(r => r.grupo))].sort();
-    $('selectGrupo').innerHTML = '<option value="">Selecciona…</option>' + grupos.map(gru => `<option value="${gru}">${gru}</option>`).join('');
-    $('selectGrupo').disabled = false;
+  $('inputGrupo').value = '';
+  
+  if(!n) { 
+    $('selectGrado').innerHTML = '<option value="">Selecciona un nivel primero</option>'; $('selectGrado').disabled = true; 
+  } else {
+    if (u === 'LOS ANGELES ENGLISHDIVISION') {
+      $('selectGrado').innerHTML = '<option value="1" selected>1</option>';
+      $('selectGrado').disabled = true; 
+    } else {
+      const grados = [...new Set(registros.filter(r => r.unidad === u && r.nivel === n).map(r => r.grado))].sort((a,b)=>a-b);
+      $('selectGrado').innerHTML = '<option value="">Selecciona…</option>' + grados.map(g => `<option value="${g}">${g}</option>`).join('');
+      $('selectGrado').disabled = false;
+    }
   }
 });
 
-function abrirModalNuevo() { overlay.classList.add('open'); $('formReg').reset(); $('editRowIndex').value = ''; $('modalTitle').textContent = 'Registrar población'; inicializarModalNuevo(); actualizarTotalVivo(); }
+function abrirModalNuevo() { 
+  overlay.classList.add('open'); 
+  $('formReg').reset(); 
+  $('editRowIndex').value = ''; 
+  $('modalTitle').textContent = 'Registrar población'; 
+  inicializarModalNuevo(); 
+  actualizarTotalVivo(); 
+}
+
 window.editarRegistro = function(rowIndex) {
   const reg = registros.find(r => r.rowIndex === rowIndex); if (!reg) return;
   overlay.classList.add('open'); $('modalTitle').textContent = 'Editar registro'; $('editRowIndex').value = reg.rowIndex;
   $('inputCiclo').value = reg.ciclo;
+  
   const unidades = [...new Set(registros.map(r => r.unidad).filter(Boolean))].sort();
   $('selectUnidad').innerHTML = '<option value="">Selecciona…</option>' + unidades.map(u => `<option value="${u}" ${u === reg.unidad ? 'selected' : ''}>${u}</option>`).join('');
-  const niveles = [...new Set(registros.filter(r => r.unidad === reg.unidad).map(r => r.nivel))].sort();
-  $('selectNivel').innerHTML = '<option value="">Selecciona…</option>' + niveles.map(n => `<option value="${n}" ${n === reg.nivel ? 'selected' : ''}>${n}</option>`).join(''); $('selectNivel').disabled = false;
-  const grados = [...new Set(registros.filter(r => r.unidad === reg.unidad && r.nivel === reg.nivel).map(r => r.grado))].sort((a,b)=>a-b);
-  $('selectGrado').innerHTML = '<option value="">Selecciona…</option>' + grados.map(g => `<option value="${g}" ${String(g) === String(reg.grado) ? 'selected' : ''}>${g}</option>`).join(''); $('selectGrado').disabled = false;
-  const grupos = [...new Set(registros.filter(r => r.unidad === reg.unidad && r.nivel === reg.nivel && String(r.grado) === String(reg.grado)).map(r => r.grupo))].sort();
-  $('selectGrupo').innerHTML = '<option value="">Selecciona…</option>' + grupos.map(g => `<option value="${g}" ${g === reg.grupo ? 'selected' : ''}>${g}</option>`).join(''); $('selectGrupo').disabled = false;
+  
+  let niveles = [];
+  if (reg.unidad === 'LOS ANGELES ENGLISHDIVISION') {
+    niveles = NIVELES_ENGLISH;
+  } else {
+    niveles = [...new Set(registros.filter(r => r.unidad === reg.unidad).map(r => r.nivel))].sort();
+  }
+  $('selectNivel').innerHTML = '<option value="">Selecciona…</option>' + niveles.map(n => `<option value="${n}" ${n === reg.nivel ? 'selected' : ''}>${n}</option>`).join(''); 
+  $('selectNivel').disabled = false;
+
+  if (reg.unidad === 'LOS ANGELES ENGLISHDIVISION') {
+    $('selectGrado').innerHTML = '<option value="1" selected>1</option>';
+    $('selectGrado').disabled = true;
+  } else {
+    const grados = [...new Set(registros.filter(r => r.unidad === reg.unidad && r.nivel === reg.nivel).map(r => r.grado))].sort((a,b)=>a-b);
+    $('selectGrado').innerHTML = '<option value="">Selecciona…</option>' + grados.map(g => `<option value="${g}" ${String(g) === String(reg.grado) ? 'selected' : ''}>${g}</option>`).join(''); 
+    $('selectGrado').disabled = false;
+  }
+
+  $('inputGrupo').value = reg.grupo;
   $('inputHombres').value = reg.hombres; $('inputMujeres').value = reg.mujeres; actualizarTotalVivo();
 };
+
 $('btnAbrir').addEventListener('click', abrirModalNuevo);
 function cerrarModal(){ overlay.classList.remove('open'); $('msg').className='msg'; }
 $('btnCerrarX').addEventListener('click', cerrarModal); $('btnCancelar').addEventListener('click', cerrarModal);
@@ -988,13 +1027,25 @@ $('formReg').addEventListener('input', actualizarTotalVivo);
 $('formReg').addEventListener('submit', async (e) => {
   e.preventDefault(); const btn = $('btnGuardar'); btn.disabled = true; btn.textContent = 'Guardando…';
   const rowIndex = $('editRowIndex').value;
+  
+  let gradoVal = $('selectGrado').value;
+  if ($('selectUnidad').value === 'LOS ANGELES ENGLISHDIVISION') {
+    gradoVal = '1'; 
+  }
+
   const payload = { 
-    unidad: $('selectUnidad').value, nivel: $('selectNivel').value, grado: $('selectGrado').value, 
-    grupo: $('selectGrupo').value, hombres: Number($('inputHombres').value) || 0, 
-    mujeres: Number($('inputMujeres').value) || 0, ciclo: $('inputCiclo').value
+    unidad: $('selectUnidad').value, 
+    nivel: $('selectNivel').value, 
+    grado: gradoVal, 
+    grupo: $('inputGrupo').value, 
+    hombres: Number($('inputHombres').value) || 0, 
+    mujeres: Number($('inputMujeres').value) || 0, 
+    ciclo: $('inputCiclo').value
   };
   payload.total = payload.hombres + payload.mujeres;
+  
   if (rowIndex) { payload.action = 'update'; payload.rowIndex = rowIndex; }
+  
   const msg = $('msg');
   try {
     const res = await fetch(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
@@ -1038,24 +1089,38 @@ $('bajaUnidad').addEventListener('change', (e) => {
   $('bajaInfoGrupo').style.display = 'none';
   if(!u) { $('bajaNivel').innerHTML = '<option value="">Selecciona una unidad primero</option>'; $('bajaNivel').disabled = true; }
   else {
-    const niveles = [...new Set(registros.filter(r => r.unidad === u).map(r => r.nivel))].sort();
+    let niveles = [];
+    if (u === 'LOS ANGELES ENGLISHDIVISION') {
+      niveles = NIVELES_ENGLISH;
+    } else {
+      niveles = [...new Set(registros.filter(r => r.unidad === u).map(r => r.nivel))].sort();
+    }
     $('bajaNivel').innerHTML = '<option value="">Selecciona…</option>' + niveles.map(n => `<option value="${n}">${n}</option>`).join('');
     $('bajaNivel').disabled = false;
   }
 });
+
 $('bajaNivel').addEventListener('change', (e) => {
   const u = $('bajaUnidad').value, n = e.target.value;
   $('bajaGrupo').innerHTML = '<option value="">Selecciona un grado primero</option>'; $('bajaGrupo').disabled = true;
   $('bajaInfoGrupo').style.display = 'none';
-  if(!n) { $('bajaGrado').innerHTML = '<option value="">Selecciona un nivel primero</option>'; $('bajaGrado').disabled = true; }
-  else {
-    const grados = [...new Set(registros.filter(r => r.unidad === u && r.nivel === n).map(r => r.grado))].sort((a,b)=>a-b);
-    $('bajaGrado').innerHTML = '<option value="">Selecciona…</option>' + grados.map(g => `<option value="${g}">${g}</option>`).join('');
-    $('bajaGrado').disabled = false;
+  
+  if(!n) { 
+    $('bajaGrado').innerHTML = '<option value="">Selecciona un nivel primero</option>'; $('bajaGrado').disabled = true; 
+  } else {
+    if (u === 'LOS ANGELES ENGLISHDIVISION') {
+      $('bajaGrado').innerHTML = '<option value="1" selected>1</option>';
+      $('bajaGrado').disabled = true; 
+    } else {
+      const grados = [...new Set(registros.filter(r => r.unidad === u && r.nivel === n).map(r => r.grado))].sort((a,b)=>a-b);
+      $('bajaGrado').innerHTML = '<option value="">Selecciona…</option>' + grados.map(g => `<option value="${g}">${g}</option>`).join('');
+      $('bajaGrado').disabled = false;
+    }
   }
 });
+
 $('bajaGrado').addEventListener('change', (e) => {
-  const u = $('bajaUnidad').value, n = $('bajaNivel').value, g = e.target.value;
+  const u = $('bajaUnidad').value, n = $('bajaNivel').value, g = $('bajaGrado').value;
   $('bajaInfoGrupo').style.display = 'none';
   if(!g) { $('bajaGrupo').innerHTML = '<option value="">Selecciona un grado primero</option>'; $('bajaGrupo').disabled = true; }
   else {
@@ -1064,6 +1129,7 @@ $('bajaGrado').addEventListener('change', (e) => {
     $('bajaGrupo').disabled = false;
   }
 });
+
 $('bajaGrupo').addEventListener('change', (e) => {
   const grupo = e.target.value;
   const u = $('bajaUnidad').value, n = $('bajaNivel').value, g = $('bajaGrado').value;
