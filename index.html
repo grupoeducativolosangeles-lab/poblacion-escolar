@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Población Escolar | Colegio Los Ángeles</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  :root{
+    --azul:#0b3d91; --azul-2:#1450b8; --amarillo:#f4b400; --gris:#f4f6fb;
+    --texto:#1f2937; --borde:#e5e7eb; --ok:#16a34a; --error:#dc2626;
+    --morado: #7c3aed;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  body{background:var(--gris);color:var(--texto);line-height:1.5}
+
+  /* HERO */
+  header.hero{background:linear-gradient(135deg,var(--azul),var(--azul-2));color:#fff;padding:48px 24px 64px;text-align:center}
+  header.hero h1{font-size:2rem;margin-bottom:8px}
+  header.hero p{opacity:.9;max-width:640px;margin:0 auto}
+
+  .container{max-width:1200px;margin:0 auto;padding:0 20px}
+
+  /* BARRA DE FILTROS GLOBAL */
+  .global-filters {
+    background: #fff; border-radius: 14px; padding: 20px;
+    box-shadow: 0 8px 24px rgba(11,61,145,.12); margin-top: -40px; margin-bottom: 24px;
+    display: flex; flex-wrap: wrap; gap: 16px; align-items: center; position: relative; z-index: 20;
+  }
+  .global-filters label { font-weight: 700; font-size: 0.9rem; color: var(--azul); }
+  .global-filters select {
+    flex: 1; min-width: 200px; padding: 12px 16px; border: 2px solid var(--borde);
+    border-radius: 10px; font-size: 1rem; font-weight: 600; color: var(--texto);
+    background: #fff; cursor: pointer; transition: 0.2s;
+  }
+  .global-filters select:focus { outline: none; border-color: var(--azul-2); }
+  .global-filters select:disabled { background: #f3f4f6; color: #9ca3af; cursor: not-allowed; }
+
+  /* PESTAÑAS (TABS) */
+  .tabs-container { display: flex; justify-content: center; gap: 10px; margin-bottom: 30px; position: relative; z-index: 10; flex-wrap: wrap;}
+  .tab-btn {
+    background: #fff; color: #6b7280; border: 1px solid var(--borde);
+    padding: 14px 28px; border-radius: 30px; font-size: 1.05rem; font-weight: 700;
+    cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,.05);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .tab-btn:hover { background: #f9fafb; }
+  .tab-btn.active { background: var(--azul); color: #fff; border-color: var(--azul); box-shadow: 0 8px 20px rgba(11,61,145,.3);}
+  .tab-btn.active.bajas { background: var(--error); border-color: var(--error); box-shadow: 0 8px 20px rgba(220,38,38,.3);}
+  .tab-btn.active.comparativo { background: var(--morado); border-color: var(--morado); box-shadow: 0 8px 20px rgba(124,58,237,.3);}
+  
+  /* CONTENIDO DE PESTAÑAS */
+  .tab-content { display: none; }
+  .tab-content.active { display: block; animation: fadeIn .3s ease-out; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px; margin-bottom: 30px;}
+  .card{background:#fff;border-radius:14px;padding:20px;box-shadow:0 8px 24px rgba(11,61,145,.12);text-align:center}
+  .card .num{font-size:2rem;font-weight:700;color:var(--azul)}
+  .card .lbl{font-size:.85rem;color:#6b7280;text-transform:uppercase;letter-spacing:.5px}
+  .card.h .num{color:#2563eb}.card.m .num{color:#db2777}
+
+  /* SECCIONES */
+  section{margin:40px 0}
+  section h2{font-size:1.3rem;color:var(--azul);margin-bottom:16px;border-left:5px solid var(--amarillo);padding-left:10px}
+  section h2.baja-title { color: var(--error); border-left-color: var(--error); }
+  section h2.comp-title { color: var(--morado); border-left-color: var(--morado); }
+
+  /* FILTROS DE TABLA */
+  .table-filters{
+    display:flex; flex-wrap:wrap; gap:12px; background:#fff; padding:16px; 
+    border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,.05); margin-bottom: 20px;
+  }
+  .table-filters select{
+    flex:1; min-width:140px; padding:10px 12px; border:1px solid var(--borde); 
+    border-radius:8px; font-size:.9rem; background:#fff;
+  }
+  .table-filters button{
+    padding:10px 20px; border:none; border-radius:8px; background:var(--azul); 
+    color:#fff; font-weight:600; cursor:pointer;
+  }
+  .table-filters button:hover{background:var(--azul-2)}
+  .btn-clear { background: #9ca3af !important; }
+  .btn-clear:hover { background: #6b7280 !important; }
+
+  /* GRÁFICOS */
+  .charts-wrapper { display: flex; flex-direction: column; gap: 20px; }
+  .charts-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+  .chart-box{background:#fff;border-radius:12px;padding:18px;box-shadow:0 2px 10px rgba(0,0,0,.05)}
+  .chart-box h3{font-size:.95rem;color:#374151;margin-bottom:12px}
+  .chart-box canvas{max-height:280px}
+  .chart-box.full-width { width: 100%; }
+  .chart-box.full-width canvas { max-height: 350px; }
+
+  /* TABLA */
+  .table-wrap{background:#fff;border-radius:12px;overflow:auto;box-shadow:0 2px 10px rgba(0,0,0,.05)}
+  table{width:100%;border-collapse:collapse;font-size:.85rem;min-width:800px}
+  th{background:var(--azul);color:#fff;font-weight:600;position:sticky;top:0}
+  th.th-baja { background: var(--error); }
+  td, th{padding:10px 14px;text-align:left;border-bottom:1px solid var(--borde)}
+  tr:hover td{background:#f9fafb}
+  .empty{padding:40px 20px;text-align:center;color:#9ca3af;font-size:1rem;}
+  td.total{font-weight:700;color:var(--azul)}
+  td.total-baja{font-weight:700;color:var(--error)}
+
+  /* BOTÓN EDITAR EN TABLA */
+  .btn-edit {
+    background: #f4b400; color: #0b3d91; border: none; padding: 6px 12px; 
+    border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.8rem;
+    transition: background 0.2s;
+  }
+  .btn-edit:hover { background: #e0a800; }
+
+  footer{text-align:center;padding:30px;color:#6b7280;font-size:.8rem}
+
+  /* BOTONES FLOTANTES */
+  .fab-container {
+    position: fixed; bottom: 28px; right: 28px; z-index: 1000;
+    display: flex; flex-direction: column; gap: 12px; align-items: flex-end;
+  }
+  .fab {
+    border: none; border-radius: 50px; padding: 16px 26px;
+    font-size: 1rem; font-weight: 800; cursor: pointer;
+    box-shadow: 0 8px 24px rgba(0,0,0,.25);
+    display: flex; align-items: center; gap: 8px;
+    transition: transform .15s;
+  }
+  .fab:hover { transform: translateY(-3px); }
+  .fab-primary { background: var(--amarillo); color: var(--azul); }
+  .fab-baja { background: var(--error); color: #fff; }
+
+  /* MODAL */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(15,23,42,.55);
+    display:none;align-items:center;justify-content:center;
+    z-index:2000;padding:20px;backdrop-filter:blur(3px);
+  }
+  .modal-overlay.open{display:flex}
+  
+  .modal{
+    background:#fff;border-radius:16px;width:100%;max-width:600px; 
+    box-shadow:0 20px 60px rgba(0,0,0,.35);overflow:hidden;
+    animation:pop .2s ease-out; display:flex; flex-direction:column;
+    max-height: 90vh; 
+  }
+  @keyframes pop{from{transform:scale(.95);opacity:0}to{transform:scale(1);opacity:1}}
+  
+  .modal-head{
+    background:linear-gradient(135deg,var(--azul),var(--azul-2));
+    color:#fff;padding:18px 24px;display:flex;justify-content:space-between;align-items:center;
+    flex-shrink: 0;
+  }
+  .modal-head.baja-head { background: linear-gradient(135deg, #991b1b, #dc2626); }
+  
+  .modal-head h3{font-size:1.2rem}
+  .modal-head button{background:none;border:none;color:#fff;font-size:1.8rem;cursor:pointer;line-height:1}
+  
+  .modal-body{
+    padding:24px;display:grid;gap:16px;
+    overflow-y: auto; 
+  }
+  .modal-body label{display:flex;flex-direction:column;font-size:.9rem;font-weight:600;color:#374151;gap:6px}
+  .modal-body input,.modal-body select{
+    padding:12px 14px;border:1px solid var(--borde);border-radius:8px;font-size:1rem;font-weight:400;
+    width: 100%;
+  }
+  .modal-body input:focus,.modal-body select:focus{outline:2px solid var(--azul-2);border-color:var(--azul-2)}
+  
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+  /* INFO DE GRUPO ACTUAL (BAJAS) */
+  .info-actual {
+    background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534;
+    padding: 12px; border-radius: 8px; font-size: 0.9rem; font-weight: 500; text-align: center;
+  }
+
+  /* CAJA DE TOTAL EN VIVO */
+  .total-live{
+    background:var(--gris);border:2px dashed var(--azul-2);
+    border-radius:12px;padding:16px;text-align:center; margin-top: 5px;
+  }
+  .total-live .lbl{font-size:.85rem;color:#6b7280;text-transform:uppercase;letter-spacing:.5px}
+  .total-live .num{font-size:2.5rem;font-weight:800;color:var(--azul)}
+  .total-live .desg{font-size:.9rem;color:#6b7280;margin-top:2px}
+
+  .modal-foot{
+    padding:16px 24px 24px; display:grid; gap:12px; flex-shrink: 0;
+    background: #fff;
+  }
+  .modal-foot button{
+    padding:16px; border:none;border-radius:10px;font-weight:700;font-size:1.1rem;cursor:pointer;
+    transition: 0.2s; width: 100%;
+  }
+  #btnGuardar{background:var(--amarillo);color:var(--azul)}
+  #btnGuardar:hover{filter:brightness(.95)}
+  #btnGuardar:disabled{opacity:.6;cursor:not-allowed}
+  
+  #btnGuardarBaja{background:var(--error);color:#fff}
+  #btnGuardarBaja:hover{filter:brightness(.9)}
+  #btnGuardarBaja:disabled{opacity:.6;cursor:not-allowed}
+
+  #btnCancelar{background:#e5e7eb;color:#374151}
+  #btnCancelar:hover{background:#d1d5db}
+  
+  .msg{padding:10px;border-radius:8px;font-size:.9rem;display:none;text-align:center; margin-bottom: 5px;}
+  .msg.ok{display:block;background:#dcfce7;color:#166534}
+  .msg.err{display:block;background:#fee2e2;color:#991b1b}
+
+  /* ESTADÍSTICAS COMPARATIVO */
+  .stat-box {
+    background: #f8fafc; border-left: 4px solid var(--morado); padding: 15px 20px;
+    margin-top: 20px; border-radius: 0 10px 10px 0; font-size: 1rem; color: #374151;
+  }
+  .stat-box strong { color: var(--morado); }
+  .stat-up { color: var(--ok); font-weight: 700; }
+  .stat-down { color: var(--error); font-weight: 700; }
+  .badge-peak { background: var(--morado); color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; margin-left: 8px; vertical-align: middle;}
+
+  @media(max-width:600px){
+    header.hero h1{font-size:1.5rem}.card .num{font-size:1.5rem}
+    .global-filters { flex-direction: column; align-items: stretch; margin-top: 20px;}
+    .tabs-container { flex-direction: column;}
+    .fab-container { width: calc(100% - 32px); align-items: stretch; right: 16px; bottom: 16px; }
+    .fab { justify-content: center; }
+    .row2{grid-template-columns:1fr}
+    .charts-row { grid-template-columns: 1fr; }
+    .modal { max-height: 95vh; }
+    .modal-body { padding: 16px; }
+    .modal-foot { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <h1>📚 Población Escolar</h1>
+  <p>Grupo Educativo Los Ángeles · Registro y estadísticas</p>
+</header>
+
+<div class="container">
+  
+  <!-- FILTRO GLOBAL -->
+  <div class="global-filters" id="globalFiltersBar">
+    <label>Filtro General:</label>
+    <select id="gFiltroUnidad">
+      <option value="">Todas las Unidades</option>
+    </select>
+    <select id="gFiltroNivel" disabled>
+      <option value="">Todos los Niveles</option>
+    </select>
+  </div>
+
+  <!-- MENÚ DE PESTAÑAS -->
+  <div class="tabs-container">
+    <button class="tab-btn active" id="tabBtnActivos" onclick="cambiarTab('activos')">👨‍🎓 Población Activa</button>
+    <button class="tab-btn bajas" id="tabBtnBajas" onclick="cambiarTab('bajas')">📉 Historial de Bajas</button>
+    <button class="tab-btn comparativo" id="tabBtnComparativo" onclick="cambiarTab('comparativo')">📊 Comparativo de Ciclos</button>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- PESTAÑA 1: POBLACIÓN ACTIVA -->
+  <!-- ========================================== -->
+  <div id="tabActivos" class="tab-content active">
+    <div class="cards">
+      <div class="card"><div class="num" id="kpiTotal">—</div><div class="lbl">Total alumnos</div></div>
+      <div class="card h"><div class="num" id="kpiH">—</div><div class="lbl">Hombres</div></div>
+      <div class="card m"><div class="num" id="kpiM">—</div><div class="lbl">Mujeres</div></div>
+      <div class="card"><div class="num" id="kpiRegistros">—</div><div class="lbl">Grupos capturados</div></div>
+    </div>
+
+    <section>
+      <h2>Estadísticas de Población</h2>
+      <div class="charts-wrapper">
+        <div class="chart-box full-width">
+          <h3>Alumnos por Unidad</h3>
+          <canvas id="chUnidad"></canvas>
+        </div>
+        <div class="charts-row">
+          <div class="chart-box"><h3>Alumnos por Nivel</h3><canvas id="chNivel"></canvas></div>
+          <div class="chart-box"><h3>Hombres vs Mujeres por Grado</h3><canvas id="chGrado"></canvas></div>
+          <div class="chart-box"><h3>Distribución H / M</h3><canvas id="chSexo"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Registros capturados</h2>
+      <div class="table-filters">
+        <select id="tFiltroUnidad"><option value="">Todas las Unidades</option></select>
+        <select id="tFiltroNivel" disabled><option value="">Todos los Niveles</option></select>
+        <select id="tFiltroGrado" disabled><option value="">Todos los Grados</option></select>
+        <select id="tFiltroGrupo" disabled><option value="">Todos los Grupos</option></select>
+        <button id="btnLimpiarFiltros" class="btn-clear">🧹 Limpiar</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Fecha</th><th>Ciclo</th><th>Unidad</th><th>Nivel</th><th>Grado</th><th>Grupo</th><th>H</th><th>M</th><th>Total</th><th>Acción</th></tr>
+          </thead>
+          <tbody id="tbody">
+            <tr><td colspan="10" class="empty">🔍 Selecciona una Unidad o Nivel en los filtros para ver los registros.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- PESTAÑA 2: HISTORIAL DE BAJAS -->
+  <!-- ========================================== -->
+  <div id="tabBajas" class="tab-content">
+    <div class="cards">
+      <div class="card" style="box-shadow: 0 8px 24px rgba(220,38,38,.12);"><div class="num" id="kpiTotalBaja" style="color:var(--error);">—</div><div class="lbl">Total bajas</div></div>
+      <div class="card h"><div class="num" id="kpiHBaja">—</div><div class="lbl">Hombres</div></div>
+      <div class="card m"><div class="num" id="kpiMBaja">—</div><div class="lbl">Mujeres</div></div>
+      <div class="card"><div class="num" id="kpiRegistrosBaja">—</div><div class="lbl">Movimientos</div></div>
+    </div>
+
+    <section>
+      <h2 class="baja-title">Estadísticas de Bajas</h2>
+      <div class="charts-wrapper">
+        <div class="chart-box full-width">
+          <h3>Bajas por Unidad</h3>
+          <canvas id="chUnidadBaja"></canvas>
+        </div>
+        <div class="charts-row">
+          <div class="chart-box"><h3>Bajas por Nivel</h3><canvas id="chNivelBaja"></canvas></div>
+          <div class="chart-box"><h3>H vs M por Grado (Bajas)</h3><canvas id="chGradoBaja"></canvas></div>
+          <div class="chart-box"><h3>Distribución H / M (Bajas)</h3><canvas id="chSexoBaja"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="baja-title">Movimientos de baja</h2>
+      <div class="table-filters">
+        <select id="tBajaUnidad"><option value="">Todas las Unidades</option></select>
+        <select id="tBajaNivel" disabled><option value="">Todos los Niveles</option></select>
+        <select id="tBajaGrado" disabled><option value="">Todos los Grados</option></select>
+        <select id="tBajaGrupo" disabled><option value="">Todos los Grupos</option></select>
+        <button id="btnLimpiarFiltrosBaja" class="btn-clear">🧹 Limpiar</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Fecha</th><th>Ciclo</th><th>Unidad</th><th>Nivel</th><th>Grado</th><th>Grupo</th><th>H</th><th>M</th><th>Total</th></tr>
+          </thead>
+          <tbody id="tbodyBajas">
+            <tr><td colspan="9" class="empty">🔍 Selecciona una Unidad o Nivel en los filtros para ver las bajas.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- PESTAÑA 3: COMPARATIVO DE CICLOS -->
+  <!-- ========================================== -->
+  <div id="tabComparativo" class="tab-content">
+    <section>
+      <h2 class="comp-title">Comparativa Histórica por Ciclo Escolar</h2>
+      
+      <div class="cards" id="compCardsContainer">
+        <!-- Se llenan dinámicamente con JS -->
+      </div>
+
+      <div class="charts-wrapper">
+        <div class="chart-box full-width">
+          <h3>Evolución del Total de Alumnos por Ciclo</h3>
+          <canvas id="chComparativo"></canvas>
+        </div>
+      </div>
+
+      <!-- NUEVO: Análisis Estadístico -->
+      <div class="stat-box" id="statAnalysis">
+        <!-- Se llena dinámicamente -->
+      </div>
+    </section>
+  </div>
+
+</div>
+
+<footer>© Colegio Mexicano Los Ángeles · Sistema de Población Escolar</footer>
+
+<!-- BOTONES FLOTANTES -->
+<div class="fab-container">
+  <button class="fab fab-baja" id="btnAbrirBaja">📉 Registrar Baja</button>
+  <button class="fab fab-primary" id="btnAbrir">➕ Registrar población</button>
+</div>
+
+<!-- MODAL: REGISTRAR / EDITAR -->
+<div class="modal-overlay" id="overlay">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-head" id="modalHeadNormal">
+      <h3 id="modalTitle">Registrar población</h3>
+      <button id="btnCerrarX" aria-label="Cerrar">×</button>
+    </div>
+
+    <form id="formReg" style="display: flex; flex-direction: column; overflow: hidden; height: 100%;">
+      <input type="hidden" id="editRowIndex" value="" />
+
+      <div class="modal-body">
+        <label>Ciclo Escolar
+          <select name="ciclo" id="inputCiclo" required>
+            <option value="2026-2027">2026-2027</option>
+            <option value="2025-2026">2025-2026</option>
+            <option value="2024-2025">2024-2025</option>
+            <option value="2023-2024">2023-2024</option>
+          </select>
+        </label>
+
+        <label>Unidad / Plantel
+          <select name="unidad" id="selectUnidad" required>
+            <option value="">Cargando unidades...</option>
+          </select>
+        </label>
+
+        <label>Nivel
+          <select name="nivel" id="selectNivel" required disabled>
+            <option value="">Selecciona una unidad primero</option>
+          </select>
+        </label>
+
+        <div class="row2">
+          <label>Grado
+            <select name="grado" id="selectGrado" required disabled>
+              <option value="">Selecciona un nivel primero</option>
+            </select>
+          </label>
+          <label>Grupo
+            <select name="grupo" id="selectGrupo" required disabled>
+              <option value="">Selecciona un grado primero</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="row2">
+          <label>Cantidad de hombres
+            <input name="hombres" id="inputHombres" type="number" min="0" value="0" required />
+          </label>
+          <label>Cantidad de mujeres
+            <input name="mujeres" id="inputMujeres" type="number" min="0" value="0" required />
+          </label>
+        </div>
+
+        <div class="total-live">
+          <div class="lbl">Total de alumnos</div>
+          <div class="num" id="liveTotal">0</div>
+          <div class="desg" id="liveDesg">0 hombres · 0 mujeres</div>
+        </div>
+      </div>
+
+      <div class="modal-foot">
+        <div class="msg" id="msg"></div>
+        <button type="submit" id="btnGuardar">💾 Guardar registro</button>
+        <button type="button" id="btnCancelar">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: DAR DE BAJA -->
+<div class="modal-overlay" id="overlayBaja">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-head baja-head">
+      <h3>📉 Registrar Baja</h3>
+      <button id="btnCerrarXBaja" aria-label="Cerrar">×</button>
+    </div>
+
+    <form id="formBaja" style="display: flex; flex-direction: column; overflow: hidden; height: 100%;">
+      <div class="modal-body">
+        
+        <label>Unidad / Plantel
+          <select id="bajaUnidad" required>
+            <option value="">Selecciona…</option>
+          </select>
+        </label>
+
+        <label>Nivel
+          <select id="bajaNivel" required disabled>
+            <option value="">Selecciona una unidad primero</option>
+          </select>
+        </label>
+
+        <div class="row2">
+          <label>Grado
+            <select id="bajaGrado" required disabled>
+              <option value="">Selecciona un nivel primero</option>
+            </select>
+          </label>
+          <label>Grupo
+            <select id="bajaGrupo" required disabled>
+              <option value="">Selecciona un grado primero</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="info-actual" id="bajaInfoGrupo" style="display:none;">
+          Alumnos actuales en este grupo: <span id="bajaHombresActuales">0</span> H y <span id="bajaMujeresActuales">0</span> M.
+        </div>
+
+        <div class="row2">
+          <label>Cantidad de hombres a dar de baja
+            <input id="bajaInputHombres" type="number" min="0" value="0" required />
+          </label>
+          <label>Cantidad de mujeres a dar de baja
+            <input id="bajaInputMujeres" type="number" min="0" value="0" required />
+          </label>
+        </div>
+
+        <div class="total-live" style="border-color: var(--error);">
+          <div class="lbl">Total de bajas a registrar</div>
+          <div class="num" id="bajaLiveTotal" style="color: var(--error);">0</div>
+          <div class="desg" id="bajaLiveDesg">0 hombres · 0 mujeres</div>
+        </div>
+      </div>
+
+      <div class="modal-foot">
+        <div class="msg" id="msgBaja"></div>
+        <button type="submit" id="btnGuardarBaja">🚨 Procesar Baja</button>
+        <button type="button" id="btnCancelarBaja">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzRPcqEepz-S-KmN4mvh_4UebXnPrQPolZqHl2k1mW_pP3vhPqiFI4HAoT52-lusdvz/exec';
+
+const $ = id => document.getElementById(id);
+let registros = [];
+let registrosBajas = [];
+let charts = {};
+
+// DATOS HISTÓRICOS FIJOS
+const HISTORICOS = {
+  '2023-2024': 3437,
+  '2024-2025': 3880,
+  '2025-2026': 3753
+};
+
+async function apiGet(params = {}) {
+  const qs = new URLSearchParams(params).toString();
+  const res = await fetch(`${SCRIPT_URL}?${qs}`);
+  if (!res.ok) throw new Error('Error de red');
+  return res.json();
+}
+
+async function cargarDatos() {
+  try {
+    const data = await apiGet({ action: 'listar' });
+    registros = (data.rows || []).map(r => ({
+      rowIndex: r.rowIndex, timestamp: r.timestamp, unidad: r.unidad || '', nivel: r.nivel || '',
+      grado: r.grado || '', grupo: r.grupo || '', hombres: Number(r.hombres) || 0,
+      mujeres: Number(r.mujeres) || 0, total: Number(r.total) || (Number(r.hombres)||0)+(Number(r.mujeres)||0),
+      ciclo: r.ciclo || '2026-2027'
+    }));
+
+    const dataBajas = await apiGet({ action: 'listarBajas' });
+    registrosBajas = (dataBajas.rows || []).map(r => ({
+      timestamp: r.timestamp, unidad: r.unidad || '', nivel: r.nivel || '',
+      grado: r.grado || '', grupo: r.grupo || '', hombres: Number(r.hombres) || 0,
+      mujeres: Number(r.mujeres) || 0, total: Number(r.total) || (Number(r.hombres)||0)+(Number(r.mujeres)||0),
+      ciclo: r.ciclo || '2026-2027'
+    }));
+    
+    inicializarFiltrosGlobales();
+    inicializarFiltrosTabla(); 
+    inicializarFiltrosBajas();
+    
+    aplicarFiltroGlobal();
+    renderComparativo();
+    
+    $('tbody').innerHTML = '<tr><td colspan="10" class="empty">🔍 Selecciona una Unidad o Nivel en los filtros para ver los registros.</td></tr>';
+    $('tbodyBajas').innerHTML = '<tr><td colspan="9" class="empty">🔍 Selecciona una Unidad o Nivel en los filtros para ver las bajas.</td></tr>';
+    
+  } catch (e) {
+    console.error(e);
+    alert("Error al cargar los datos. Revisa la conexión.");
+  }
+}
+
+// ==========================================
+// NAVEGACIÓN DE PESTAÑAS
+// ==========================================
+function cambiarTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  
+  if (tab === 'activos') {
+    $('tabActivos').classList.add('active');
+    $('tabBtnActivos').classList.add('active');
+    $('globalFiltersBar').style.display = 'flex';
+  } else if (tab === 'bajas') {
+    $('tabBajas').classList.add('active');
+    $('tabBtnBajas').classList.add('active');
+    $('tabBtnBajas').style.background = 'var(--error)'; 
+    $('globalFiltersBar').style.display = 'flex';
+  } else {
+    $('tabComparativo').classList.add('active');
+    $('tabBtnComparativo').classList.add('active');
+    $('tabBtnComparativo').style.background = 'var(--morado)'; 
+    $('globalFiltersBar').style.display = 'none'; 
+    renderComparativo();
+  }
+  
+  if (tab !== 'activos') $('tabBtnActivos').style.background = '#fff';
+  if (tab !== 'bajas') $('tabBtnBajas').style.background = '#fff';
+  if (tab !== 'comparativo') $('tabBtnComparativo').style.background = '#fff';
+}
+
+// ==========================================
+// FILTROS GLOBALES
+// ==========================================
+function inicializarFiltrosGlobales() {
+  const unidades = [...new Set(registros.map(r => r.unidad).filter(Boolean))].sort();
+  $('gFiltroUnidad').innerHTML = '<option value="">Todas las Unidades</option>' + unidades.map(u => `<option value="${u}">${u}</option>`).join('');
+  $('gFiltroNivel').innerHTML = '<option value="">Todos los Niveles</option>'; 
+  $('gFiltroNivel').disabled = true;
+}
+$('gFiltroUnidad').addEventListener('change', (e) => {
+  const u = e.target.value;
+  if (!u) {
+    $('gFiltroNivel').innerHTML = '<option value="">Todos los Niveles</option>'; $('gFiltroNivel').disabled = true;
+  } else {
+    const niveles = [...new Set(registros.filter(r => r.unidad === u).map(r => r.nivel))].sort();
+    $('gFiltroNivel').innerHTML = '<option value="">Todos los Niveles</option>' + niveles.map(n => `<option value="${n}">${n}</option>`).join('');
+    $('gFiltroNivel').disabled = false;
+  }
+  aplicarFiltroGlobal();
+});
+$('gFiltroNivel').addEventListener('change', aplicarFiltroGlobal);
+
+function aplicarFiltroGlobal() {
+  const uGlobal = $('gFiltroUnidad').value;
+  const nGlobal = $('gFiltroNivel').value;
+
+  const dataFiltradaPob = registros.filter(r => (!uGlobal || r.unidad === uGlobal) && (!nGlobal || r.nivel === nGlobal));
+  actualizarKPIsyGraficos(dataFiltradaPob, 'Registros');
+
+  const dataFiltradaBajas = registrosBajas.filter(r => (!uGlobal || r.unidad === uGlobal) && (!nGlobal || r.nivel === nGlobal));
+  actualizarKPIsyGraficos(dataFiltradaBajas, 'Bajas');
+}
+
+// ==========================================
+// COMPARATIVO DE CICLOS CON DATOS HISTÓRICOS
+// ==========================================
+function renderComparativo() {
+  // 1. Calcular el total del ciclo actual (2026-2027) sumando los registros de la BD
+  let totalActual = 0;
+  registros.forEach(r => {
+    if (r.ciclo === '2026-2027') totalActual += r.total;
+  });
+
+  // 2. Unir históricos con el actual
+  const dataCiclos = { ...HISTORICOS, '2026-2027': totalActual };
+  const ciclos = Object.keys(dataCiclos).sort();
+  
+  // 3. Renderizar Tarjetas
+  const container = $('compCardsContainer');
+  container.innerHTML = '';
+  const colors = ['#0b3d91', '#1450b8', '#7c3aed', '#f4b400', '#16a34a'];
+  
+  // Encontrar el pico máximo
+  let maxTotal = 0;
+  ciclos.forEach(c => { if(dataCiclos[c] > maxTotal) maxTotal = dataCiclos[c]; });
+
+  ciclos.forEach((ciclo, i) => {
+    const isPeak = dataCiclos[ciclo] === maxTotal;
+    container.innerHTML += `
+      <div class="card" style="box-shadow: 0 8px 24px rgba(124,58,237,.12);">
+        <div class="num" style="color: ${colors[i % colors.length]};">
+          ${dataCiclos[ciclo].toLocaleString('es-MX')} 
+          ${isPeak ? '<span class="badge-peak">Máx</span>' : ''}
+        </div>
+        <div class="lbl">Ciclo ${ciclo}</div>
+      </div>
+    `;
+  });
+
+  // 4. Renderizar Gráfico de Barras
+  if (charts['chComparativo']) charts['chComparativo'].destroy();
+  charts['chComparativo'] = new Chart($('chComparativo'), {
+    type: 'bar',
+    data: {
+      labels: ciclos.map(c => 'Ciclo ' + c),
+      datasets: [{
+        label: 'Total de Alumnos',
+        data: ciclos.map(c => dataCiclos[c]),
+        backgroundColor: colors,
+        borderRadius: 8,
+        barThickness: 60
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+
+  // 5. Análisis Estadístico (Texto)
+  const statContainer = $('statAnalysis');
+  let statHTML = '<strong>Análisis de Crecimiento:</strong><br><br>';
+  
+  for (let i = 1; i < ciclos.length; i++) {
+    const cicloAnt = ciclos[i - 1];
+    const cicloAct = ciclos[i];
+    const valAnt = dataCiclos[cicloAnt];
+    const valAct = dataCiclos[cicloAct];
+    
+    const diferencia = valAct - valAnt;
+    const porcentaje = ((diferencia / valAnt) * 100).toFixed(1);
+    
+    if (diferencia > 0) {
+      statHTML += `• Del ciclo <strong>${cicloAnt}</strong> al <strong>${cicloAct}</strong>: Hubo un crecimiento de <strong>${diferencia.toLocaleString('es-MX')}</strong> alumnos <span class="stat-up">(+${porcentaje}%)</span>.<br>`;
+    } else if (diferencia < 0) {
+      statHTML += `• Del ciclo <strong>${cicloAnt}</strong> al <strong>${cicloAct}</strong>: Hubo una disminución de <strong>${Math.abs(diferencia).toLocaleString('es-MX')}</strong> alumnos <span class="stat-down">(${porcentaje}%)</span>.<br>`;
+    } else {
+      statHTML += `• Del ciclo <strong>${cicloAnt}</strong> al <strong>${cicloAct}</strong>: La población se mantuvo igual.<br>`;
+    }
+  }
+
+  statContainer.innerHTML = statHTML;
+}
+
+// ==========================================
+// FILTROS EN CASCADA (TABLAS Y MODALES)
+// ==========================================
+function inicializarFiltrosTabla() {
+  const unidades = [...new Set(registros.map(r => r.unidad).filter(Boolean))].sort();
+  $('tFiltroUnidad').innerHTML = '<option value="">Todas las Unidades</option>' + unidades.map(u => `<option value="${u}">${u}</option>`).join('');
+  $('tFiltroNivel').innerHTML = '<option value="">Todos los Niveles</option>'; $('tFiltroNivel').disabled = true;
+  $('tFiltroGrado').innerHTML = '<option value="">Todos los Grados</option>'; $('tFiltroGrado').disabled = true;
+  $('tFiltroGrupo').innerHTML = '<option value="">Todos los Grupos</option>'; $('tFiltroGrupo').disabled = true;
+}
+$('tFiltroUnidad').addEventListener('change', (e) => {
+  const u = e.target.value;
+  $('tFiltroGrado').innerHTML = '<option value="">Todos los Grados</option>'; $('tFiltroGrado').disabled = true;
+  $('tFiltroGrupo').innerHTML = '<option value="">Todos los Grupos</option>'; $('tFiltroGrupo').disabled = true;
+  if(!u) { $('tFiltroNivel').innerHTML = '<option value="">Todos los Niveles</option>'; $('tFiltroNivel').disabled = true; }
+  else {
+    const niveles = [...new Set(registros.filter(r => r.unidad === u).map(r => r.nivel))].sort();
+    $('tFiltroNivel').innerHTML = '<option value="">Todos los Niveles</option>' + niveles.map(n => `<option value="${n}">${n}</option>`).join('');
+    $('tFiltroNivel').disabled = false;
+  }
+  filtrarTablaYGraficos();
+});
+$('tFiltroNivel').addEventListener('change', (e) => {
+  const u = $('tFiltroUnidad').value, n = e.target.value;
+  $('tFiltroGrupo').innerHTML = '<option value="">Todos los Grupos</option>'; $('tFiltroGrupo').disabled = true;
+  if(!n) { $('tFiltroGrado').innerHTML = '<option value="">Todos los Grados</option>'; $('tFiltroGrado').disabled = true; }
+  else {
+    const grados = [...new Set(registros.filter(r => r.unidad === u && r.nivel === n).map(r => r.grado))].sort((a,b)=>a-b);
+    $('tFiltroGrado').innerHTML = '<option value="">Todos los Grados</option>' + grados.map(g => `<option value="${g}">${g}</option>`).join('');
+    $('tFiltroGrado').disabled = false;
+  }
+  filtrarTablaYGraficos();
+});
+$('tFiltroGrado').addEventListener('change', (e) => {
+  const u = $('tFiltroUnidad').value, n = $('tFiltroNivel').value, g = e.target.value;
+  if(!g) { $('tFiltroGrupo').innerHTML = '<option value="">Todos los Grupos</option>'; $('tFiltroGrupo').disabled = true; }
+  else {
+    const grupos = [...new Set(registros.filter(r => r.unidad === u && r.nivel === n && String(r.grado) === String(g)).map(r => r.grupo))].sort();
+    $('tFiltroGrupo').innerHTML = '<option value="">Todos los Grupos</option>' + grupos.map(gru => `<option value="${gru}">${gru}</option>`).join('');
+    $('tFiltroGrupo').disabled = false;
+  }
+  filtrarTablaYGraficos();
+});
+$('tFiltroGrupo').addEventListener('change', filtrarTablaYGraficos);
+$('btnLimpiarFiltros').addEventListener('click', () => { inicializarFiltrosTabla(); filtrarTablaYGraficos(); });
+
+function filtrarTablaYGraficos() {
+  const u = $('tFiltroUnidad').value, n = $('tFiltroNivel').value, g = $('tFiltroGrado').value, gr = $('tFiltroGrupo').value;
+  if (!u && !n && !g && !gr) {
+    $('tbody').innerHTML = '<tr><td colspan="10" class="empty">🔍 Selecciona una Unidad o Nivel en los filtros para ver los registros.</td></tr>';
+    return;
+  }
+  const dataFiltrada = registros.filter(r => (!u || r.unidad === u) && (!n || r.nivel === n) && (!g || String(r.grado) === String(g)) && (!gr || r.grupo === gr));
+  renderTabla(dataFiltrada, 'Registros');
+}
+
+function inicializarFiltrosBajas() {
+  const unidades = [...new Set(registrosBajas.map(r => r.unidad).filter(Boolean))].sort();
+  $('tBajaUnidad').innerHTML = '<option value="">Todas las Unidades</option>' + unidades.map(u => `<option value="${u}">${u}</option>`).join('');
+  $('tBajaNivel').innerHTML = '<option value="">Todos los Niveles</option>'; $('tBajaNivel').disabled = true;
+  $('tBajaGrado').innerHTML = '<option value="">Todos los Grados</option>'; $('tBajaGrado').disabled = true;
+  $('tBajaGrupo').innerHTML = '<option value="">Todos los Grupos</option>'; $('tBajaGrupo').disabled = true;
+}
+$('tBajaUnidad').addEventListener('change', (e) => {
+  const u = e.target.value;
+  $('tBajaGrado').innerHTML = '<option value="">Todos los Grados</option>'; $('tBajaGrado').disabled = true;
+  $('tBajaGrupo').innerHTML = '<option value="">Todos los Grupos</option>'; $('tBajaGrupo').disabled = true;
+  if(!u) { $('tBajaNivel').innerHTML = '<option value="">Todos los Niveles</option>'; $('tBajaNivel').disabled = true; }
+  else {
+    const niveles = [...new Set(registrosBajas.filter(r => r.unidad === u).map(r => r.nivel))].sort();
+    $('tBajaNivel').innerHTML = '<option value="">Todos los Niveles</option>' + niveles.map(n => `<option value="${n}">${n}</option>`).join('');
+    $('tBajaNivel').disabled = false;
+  }
+  filtrarTablaYGraficosBajas();
+});
+$('tBajaNivel').addEventListener('change', (e) => {
+  const u = $('tBajaUnidad').value, n = e.target.value;
+  $('tBajaGrupo').innerHTML = '<option value="">Todos los Grupos</option>'; $('tBajaGrupo').disabled = true;
+  if(!n) { $('tBajaGrado').innerHTML = '<option value="">Todos los Grados</option>'; $('tBajaGrado').disabled = true; }
+  else {
+    const grados = [...new Set(registrosBajas.filter(r => r.unidad === u && r.nivel === n).map(r => r.grado))].sort((a,b)=>a-b);
+    $('tBajaGrado').innerHTML = '<option value="">Todos los Grados</option>' + grados.map(g => `<option value="${g}">${g}</option>`).join('');
+    $('tBajaGrado').disabled = false;
+  }
+  filtrarTablaYGraficosBajas();
+});
+$('tBajaGrado').addEventListener('change', (e) => {
+  const u = $('tBajaUnidad').value, n = $('tBajaNivel').value, g = e.target.value;
+  if(!g) { $('tBajaGrupo').innerHTML = '<option value="">Todos los Grupos</option>'; $('tBajaGrupo').disabled = true; }
+  else {
+    const grupos = [...new Set(registrosBajas.filter(r => r.unidad === u && r.nivel === n && String(r.grado) === String(g)).map(r => r.grupo))].sort();
+    $('tBajaGrupo').innerHTML = '<option value="">Todos los Grupos</option>' + grupos.map(gru => `<option value="${gru}">${gru}</option>`).join('');
+    $('tBajaGrupo').disabled = false;
+  }
+  filtrarTablaYGraficosBajas();
+});
+$('tBajaGrupo').addEventListener('change', filtrarTablaYGraficosBajas);
+$('btnLimpiarFiltrosBaja').addEventListener('click', () => { inicializarFiltrosBajas(); filtrarTablaYGraficosBajas(); });
+
+function filtrarTablaYGraficosBajas() {
+  const u = $('tBajaUnidad').value, n = $('tBajaNivel').value, g = $('tBajaGrado').value, gr = $('tBajaGrupo').value;
+  if (!u && !n && !g && !gr) {
+    $('tbodyBajas').innerHTML = '<tr><td colspan="9" class="empty">🔍 Selecciona una Unidad o Nivel en los filtros para ver las bajas.</td></tr>';
+    return;
+  }
+  const dataFiltrada = registrosBajas.filter(r => (!u || r.unidad === u) && (!n || r.nivel === n) && (!g || String(r.grado) === String(g)) && (!gr || r.grupo === gr));
+  renderTabla(dataFiltrada, 'Bajas');
+}
+
+// ==========================================
+// RENDERIZADO GENERAL
+// ==========================================
+function actualizarKPIsyGraficos(data, tipo) {
+  const isBaja = tipo === 'Bajas';
+  $(`kpiTotal${isBaja ? 'Baja' : ''}`).textContent = data.reduce((s,r)=>s+r.total,0).toLocaleString('es-MX');
+  $(`kpiH${isBaja ? 'Baja' : ''}`).textContent = data.reduce((s,r)=>s+r.hombres,0).toLocaleString('es-MX');
+  $(`kpiM${isBaja ? 'Baja' : ''}`).textContent = data.reduce((s,r)=>s+r.mujeres,0).toLocaleString('es-MX');
+  $(`kpiRegistros${isBaja ? 'Baja' : ''}`).textContent = data.length;
+  renderGraficos(data, tipo);
+}
+
+function renderTabla(data, tipo) {
+  const tb = $(`tbody${tipo === 'Bajas' ? 'Bajas' : ''}`);
+  if (!data.length) {
+    tb.innerHTML = `<tr><td colspan="${tipo === 'Bajas' ? '9' : '10'}" class="empty">No hay registros que coincidan con esta búsqueda.</td></tr>`;
+    return;
+  }
+  
+  const dataMostrar = data.slice().reverse().slice(0, 100);
+  if (tipo === 'Bajas') {
+    tb.innerHTML = dataMostrar.map(r => `
+      <tr>
+        <td>${r.timestamp ? new Date(r.timestamp).toLocaleDateString('es-MX') : '—'}</td>
+        <td>${r.ciclo}</td>
+        <td>${esc(r.unidad)}</td>
+        <td>${esc(r.nivel)}</td>
+        <td>${esc(r.grado)}</td>
+        <td>${esc(r.grupo)}</td>
+        <td>${r.hombres}</td>
+        <td>${r.mujeres}</td>
+        <td class="total-baja">${r.total}</td>
+      </tr>`).join('');
+  } else {
+    tb.innerHTML = dataMostrar.map(r => `
+      <tr>
+        <td>${r.timestamp ? new Date(r.timestamp).toLocaleDateString('es-MX') : '—'}</td>
+        <td>${r.ciclo}</td>
+        <td>${esc(r.unidad)}</td>
+        <td>${esc(r.nivel)}</td>
+        <td>${esc(r.grado)}</td>
+        <td>${esc(r.grupo)}</td>
+        <td>${r.hombres}</td>
+        <td>${r.mujeres}</td>
+        <td class="total">${r.total}</td>
+        <td><button class="btn-edit" onclick="editarRegistro(${r.rowIndex})">✏️ Editar</button></td>
+      </tr>`).join('');
+  }
+}
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function crearChart(id, config) {
+  if (charts[id]) charts[id].destroy();
+  charts[id] = new Chart($(id), config);
+}
+function sumBy(data, keyFn, valFn) {
+  const map = {};
+  data.forEach(r => { const k = keyFn(r) || 'N/D'; map[k] = (map[k] || 0) + (valFn ? valFn(r) : 1); });
+  return map;
+}
+
+function renderGraficos(data, tipo) {
+  const isBaja = tipo === 'Bajas';
+  const pref = isBaja ? 'Baja' : '';
+  const palette = isBaja ? ['#991b1b','#dc2626','#f87171','#fca5a5','#ef4444','#b91c1c'] : ['#0b3d91','#1450b8','#f4b400','#db2777','#16a34a','#7c3aed'];
+
+  const unidad = sumBy(data, r => r.unidad, r => r.total);
+  crearChart(`chUnidad${pref}`, { type: 'bar', data: { labels: Object.keys(unidad), datasets: [{ label: 'Alumnos', data: Object.values(unidad), backgroundColor: palette, borderRadius: 8 }] }, options: { responsive: true, plugins: { legend: { display: false } } } });
+
+  const nivel = sumBy(data, r => r.nivel, r => r.total);
+  crearChart(`chNivel${pref}`, { type: 'doughnut', data: { labels: Object.keys(nivel), datasets: [{ data: Object.values(nivel), backgroundColor: palette }] }, options: { responsive: true, plugins: { legend: { position: 'bottom' } } } });
+
+  const grados = [...new Set(data.map(r => r.grado).filter(Boolean))].sort((a,b)=>a-b);
+  const h = grados.map(g => data.filter(r => String(r.grado)===String(g)).reduce((s,r)=>s+r.hombres,0));
+  const m = grados.map(g => data.filter(r => String(r.grado)===String(g)).reduce((s,r)=>s+r.mujeres,0));
+  crearChart(`chGrado${pref}`, { type: 'bar', data: { labels: grados.map(g => 'Grado ' + g), datasets: [{ label: 'Hombres', data: h, backgroundColor: '#2563eb' }, { label: 'Mujeres', data: m, backgroundColor: '#db2777' }] }, options: { responsive: true } });
+
+  const totalH = data.reduce((s,r)=>s+r.hombres,0);
+  const totalM = data.reduce((s,r)=>s+r.mujeres,0);
+  crearChart(`chSexo${pref}`, { type: 'doughnut', data: { labels: ['Hombres','Mujeres'], datasets: [{ data: [totalH,totalM], backgroundColor: ['#2563eb','#db2777'] }] }, options: { responsive: true, plugins: { legend: { position: 'bottom' } } } });
+}
+
+// ==========================================
+// LÓGICA DEL MODAL REGISTRAR
+// ==========================================
+const overlay = $('overlay');
+function inicializarModalNuevo() {
+  const unidades = [...new Set(registros.map(r => r.unidad).filter(Boolean))].sort();
+  $('selectUnidad').innerHTML = '<option value="">Selecciona…</option>' + unidades.map(u => `<option value="${u}">${u}</option>`).join('');
+  $('selectNivel').innerHTML = '<option value="">Selecciona una unidad primero</option>'; $('selectNivel').disabled = true;
+  $('selectGrado').innerHTML = '<option value="">Selecciona un nivel primero</option>'; $('selectGrado').disabled = true;
+  $('selectGrupo').innerHTML = '<option value="">Selecciona un grado primero</option>'; $('selectGrupo').disabled = true;
+}
+$('selectUnidad').addEventListener('change', (e) => {
+  const u = e.target.value;
+  $('selectGrado').innerHTML = '<option value="">Selecciona un nivel primero</option>'; $('selectGrado').disabled = true;
+  $('selectGrupo').innerHTML = '<option value="">Selecciona un grado primero</option>'; $('selectGrupo').disabled = true;
+  if(!u) { $('selectNivel').innerHTML = '<option value="">Selecciona una unidad primero</option>'; $('selectNivel').disabled = true; }
+  else {
+    const niveles = [...new Set(registros.filter(r => r.unidad === u).map(r => r.nivel))].sort();
+    $('selectNivel').innerHTML = '<option value="">Selecciona…</option>' + niveles.map(n => `<option value="${n}">${n}</option>`).join('');
+    $('selectNivel').disabled = false;
+  }
+});
+$('selectNivel').addEventListener('change', (e) => {
+  const u = $('selectUnidad').value, n = e.target.value;
+  $('selectGrupo').innerHTML = '<option value="">Selecciona un grado primero</option>'; $('selectGrupo').disabled = true;
+  if(!n) { $('selectGrado').innerHTML = '<option value="">Selecciona un nivel primero</option>'; $('selectGrado').disabled = true; }
+  else {
+    const grados = [...new Set(registros.filter(r => r.unidad === u && r.nivel === n).map(r => r.grado))].sort((a,b)=>a-b);
+    $('selectGrado').innerHTML = '<option value="">Selecciona…</option>' + grados.map(g => `<option value="${g}">${g}</option>`).join('');
+    $('selectGrado').disabled = false;
+  }
+});
+$('selectGrado').addEventListener('change', (e) => {
+  const u = $('selectUnidad').value, n = $('selectNivel').value, g = e.target.value;
+  if(!g) { $('selectGrupo').innerHTML = '<option value="">Selecciona un grado primero</option>'; $('selectGrupo').disabled = true; }
+  else {
+    const grupos = [...new Set(registros.filter(r => r.unidad === u && r.nivel === n && String(r.grado) === String(g)).map(r => r.grupo))].sort();
+    $('selectGrupo').innerHTML = '<option value="">Selecciona…</option>' + grupos.map(gru => `<option value="${gru}">${gru}</option>`).join('');
+    $('selectGrupo').disabled = false;
+  }
+});
+
+function abrirModalNuevo() { overlay.classList.add('open'); $('formReg').reset(); $('editRowIndex').value = ''; $('modalTitle').textContent = 'Registrar población'; inicializarModalNuevo(); actualizarTotalVivo(); }
+window.editarRegistro = function(rowIndex) {
+  const reg = registros.find(r => r.rowIndex === rowIndex); if (!reg) return;
+  overlay.classList.add('open'); $('modalTitle').textContent = 'Editar registro'; $('editRowIndex').value = reg.rowIndex;
+  $('inputCiclo').value = reg.ciclo;
+  const unidades = [...new Set(registros.map(r => r.unidad).filter(Boolean))].sort();
+  $('selectUnidad').innerHTML = '<option value="">Selecciona…</option>' + unidades.map(u => `<option value="${u}" ${u === reg.unidad ? 'selected' : ''}>${u}</option>`).join('');
+  const niveles = [...new Set(registros.filter(r => r.unidad === reg.unidad).map(r => r.nivel))].sort();
+  $('selectNivel').innerHTML = '<option value="">Selecciona…</option>' + niveles.map(n => `<option value="${n}" ${n === reg.nivel ? 'selected' : ''}>${n}</option>`).join(''); $('selectNivel').disabled = false;
+  const grados = [...new Set(registros.filter(r => r.unidad === reg.unidad && r.nivel === reg.nivel).map(r => r.grado))].sort((a,b)=>a-b);
+  $('selectGrado').innerHTML = '<option value="">Selecciona…</option>' + grados.map(g => `<option value="${g}" ${String(g) === String(reg.grado) ? 'selected' : ''}>${g}</option>`).join(''); $('selectGrado').disabled = false;
+  const grupos = [...new Set(registros.filter(r => r.unidad === reg.unidad && r.nivel === reg.nivel && String(r.grado) === String(reg.grado)).map(r => r.grupo))].sort();
+  $('selectGrupo').innerHTML = '<option value="">Selecciona…</option>' + grupos.map(g => `<option value="${g}" ${g === reg.grupo ? 'selected' : ''}>${g}</option>`).join(''); $('selectGrupo').disabled = false;
+  $('inputHombres').value = reg.hombres; $('inputMujeres').value = reg.mujeres; actualizarTotalVivo();
+};
+$('btnAbrir').addEventListener('click', abrirModalNuevo);
+function cerrarModal(){ overlay.classList.remove('open'); $('msg').className='msg'; }
+$('btnCerrarX').addEventListener('click', cerrarModal); $('btnCancelar').addEventListener('click', cerrarModal);
+overlay.addEventListener('click', e => { if (e.target === overlay) cerrarModal(); });
+
+function actualizarTotalVivo() {
+  const h = Number($('inputHombres').value) || 0, m = Number($('inputMujeres').value) || 0;
+  $('liveTotal').textContent = h + m; $('liveDesg').textContent = `${h} hombre${h===1?'':'s'} · ${m} mujer${m===1?'':'es'}`;
+}
+$('formReg').addEventListener('input', actualizarTotalVivo);
+
+$('formReg').addEventListener('submit', async (e) => {
+  e.preventDefault(); const btn = $('btnGuardar'); btn.disabled = true; btn.textContent = 'Guardando…';
+  const rowIndex = $('editRowIndex').value;
+  const payload = { 
+    unidad: $('selectUnidad').value, nivel: $('selectNivel').value, grado: $('selectGrado').value, 
+    grupo: $('selectGrupo').value, hombres: Number($('inputHombres').value) || 0, 
+    mujeres: Number($('inputMujeres').value) || 0, ciclo: $('inputCiclo').value
+  };
+  payload.total = payload.hombres + payload.mujeres;
+  if (rowIndex) { payload.action = 'update'; payload.rowIndex = rowIndex; }
+  const msg = $('msg');
+  try {
+    const res = await fetch(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
+    const out = await res.json();
+    if (out.result === 'success') {
+      msg.className = 'msg ok'; msg.textContent = rowIndex ? '✅ Actualizado correctamente.' : `✅ Registrado: ${payload.total} alumnos.`;
+      await cargarDatos();
+      const u = $('tFiltroUnidad').value;
+      if (u) { $('tFiltroUnidad').value = u; $('tFiltroUnidad').dispatchEvent(new Event('change')); }
+      setTimeout(cerrarModal, 1200);
+    } else { msg.className = 'msg err'; msg.textContent = '❌ ' + (out.message || 'Error'); }
+  } catch (err) { msg.className = 'msg err'; msg.textContent = '❌ Error: ' + err.message; } 
+  finally { btn.disabled = false; btn.textContent = '💾 Guardar registro'; }
+});
+
+// ==========================================
+// LÓGICA DEL MODAL BAJAS
+// ==========================================
+const overlayBaja = $('overlayBaja');
+let grupoBajaSeleccionado = null;
+
+function abrirModalBaja() {
+  overlayBaja.classList.add('open'); $('formBaja').reset(); grupoBajaSeleccionado = null;
+  const unidades = [...new Set(registros.map(r => r.unidad).filter(Boolean))].sort();
+  $('bajaUnidad').innerHTML = '<option value="">Selecciona…</option>' + unidades.map(u => `<option value="${u}">${u}</option>`).join('');
+  $('bajaNivel').innerHTML = '<option value="">Selecciona una unidad primero</option>'; $('bajaNivel').disabled = true;
+  $('bajaGrado').innerHTML = '<option value="">Selecciona un nivel primero</option>'; $('bajaGrado').disabled = true;
+  $('bajaGrupo').innerHTML = '<option value="">Selecciona un grado primero</option>'; $('bajaGrupo').disabled = true;
+  $('bajaInfoGrupo').style.display = 'none';
+  actualizarTotalBajaVivo();
+}
+function cerrarModalBaja(){ overlayBaja.classList.remove('open'); $('msgBaja').className='msg'; }
+$('btnAbrirBaja').addEventListener('click', abrirModalBaja);
+$('btnCerrarXBaja').addEventListener('click', cerrarModalBaja); $('btnCancelarBaja').addEventListener('click', cerrarModalBaja);
+overlayBaja.addEventListener('click', e => { if (e.target === overlayBaja) cerrarModalBaja(); });
+
+$('bajaUnidad').addEventListener('change', (e) => {
+  const u = e.target.value;
+  $('bajaGrado').innerHTML = '<option value="">Selecciona un nivel primero</option>'; $('bajaGrado').disabled = true;
+  $('bajaGrupo').innerHTML = '<option value="">Selecciona un grado primero</option>'; $('bajaGrupo').disabled = true;
+  $('bajaInfoGrupo').style.display = 'none';
+  if(!u) { $('bajaNivel').innerHTML = '<option value="">Selecciona una unidad primero</option>'; $('bajaNivel').disabled = true; }
+  else {
+    const niveles = [...new Set(registros.filter(r => r.unidad === u).map(r => r.nivel))].sort();
+    $('bajaNivel').innerHTML = '<option value="">Selecciona…</option>' + niveles.map(n => `<option value="${n}">${n}</option>`).join('');
+    $('bajaNivel').disabled = false;
+  }
+});
+$('bajaNivel').addEventListener('change', (e) => {
+  const u = $('bajaUnidad').value, n = e.target.value;
+  $('bajaGrupo').innerHTML = '<option value="">Selecciona un grado primero</option>'; $('bajaGrupo').disabled = true;
+  $('bajaInfoGrupo').style.display = 'none';
+  if(!n) { $('bajaGrado').innerHTML = '<option value="">Selecciona un nivel primero</option>'; $('bajaGrado').disabled = true; }
+  else {
+    const grados = [...new Set(registros.filter(r => r.unidad === u && r.nivel === n).map(r => r.grado))].sort((a,b)=>a-b);
+    $('bajaGrado').innerHTML = '<option value="">Selecciona…</option>' + grados.map(g => `<option value="${g}">${g}</option>`).join('');
+    $('bajaGrado').disabled = false;
+  }
+});
+$('bajaGrado').addEventListener('change', (e) => {
+  const u = $('bajaUnidad').value, n = $('bajaNivel').value, g = e.target.value;
+  $('bajaInfoGrupo').style.display = 'none';
+  if(!g) { $('bajaGrupo').innerHTML = '<option value="">Selecciona un grado primero</option>'; $('bajaGrupo').disabled = true; }
+  else {
+    const grupos = [...new Set(registros.filter(r => r.unidad === u && r.nivel === n && String(r.grado) === String(g)).map(r => r.grupo))].sort();
+    $('bajaGrupo').innerHTML = '<option value="">Selecciona…</option>' + grupos.map(gru => `<option value="${gru}">${gru}</option>`).join('');
+    $('bajaGrupo').disabled = false;
+  }
+});
+$('bajaGrupo').addEventListener('change', (e) => {
+  const grupo = e.target.value;
+  const u = $('bajaUnidad').value, n = $('bajaNivel').value, g = $('bajaGrado').value;
+  if (!grupo) { $('bajaInfoGrupo').style.display = 'none'; return; }
+  grupoBajaSeleccionado = registros.find(r => r.unidad === u && r.nivel === n && String(r.grado) === String(g) && r.grupo === grupo);
+  if (grupoBajaSeleccionado) {
+    $('bajaInfoGrupo').style.display = 'block';
+    $('bajaHombresActuales').textContent = grupoBajaSeleccionado.hombres;
+    $('bajaMujeresActuales').textContent = grupoBajaSeleccionado.mujeres;
+  }
+});
+
+function actualizarTotalBajaVivo() {
+  const h = Number($('bajaInputHombres').value) || 0, m = Number($('bajaInputMujeres').value) || 0;
+  $('bajaLiveTotal').textContent = h + m; $('bajaLiveDesg').textContent = `${h} hombre${h===1?'':'s'} · ${m} mujer${m===1?'':'es'}`;
+}
+$('formBaja').addEventListener('input', actualizarTotalBajaVivo);
+
+$('formBaja').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!grupoBajaSeleccionado) { $('msgBaja').className = 'msg err'; $('msgBaja').textContent = 'Selecciona un grupo válido.'; return; }
+  const hBaja = Number($('bajaInputHombres').value) || 0, mBaja = Number($('bajaInputMujeres').value) || 0;
+  if (hBaja === 0 && mBaja === 0) { $('msgBaja').className = 'msg err'; $('msgBaja').textContent = 'Indica al menos 1 baja.'; return; }
+  const nuevosH = grupoBajaSeleccionado.hombres - hBaja, nuevosM = grupoBajaSeleccionado.mujeres - mBaja;
+  if (nuevosH < 0 || nuevosM < 0) { $('msgBaja').className = 'msg err'; $('msgBaja').textContent = 'No puedes dar de baja más alumnos de los que hay.'; return; }
+
+  const btn = $('btnGuardarBaja'); btn.disabled = true; btn.textContent = 'Procesando…';
+  const payload = {
+    action: 'baja', rowIndex: grupoBajaSeleccionado.rowIndex,
+    unidad: grupoBajaSeleccionado.unidad, nivel: grupoBajaSeleccionado.nivel,
+    grado: grupoBajaSeleccionado.grado, grupo: grupoBajaSeleccionado.grupo,
+    nuevosH: nuevosH, nuevosM: nuevosM, hBaja: hBaja, mBaja: mBaja, ciclo: grupoBajaSeleccionado.ciclo
+  };
+  const msg = $('msgBaja');
+  try {
+    const res = await fetch(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
+    const out = await res.json();
+    if (out.result === 'success') {
+      msg.className = 'msg ok'; msg.textContent = `✅ Baja procesada. Se descontaron ${hBaja}H y ${mBaja}M.`;
+      await cargarDatos();
+      const u = $('tFiltroUnidad').value;
+      if (u) { $('tFiltroUnidad').value = u; $('tFiltroUnidad').dispatchEvent(new Event('change')); }
+      setTimeout(cerrarModalBaja, 1500);
+    } else { msg.className = 'msg err'; msg.textContent = '❌ ' + (out.message || 'Error'); }
+  } catch (err) { msg.className = 'msg err'; msg.textContent = '❌ Error: ' + err.message; } 
+  finally { btn.disabled = false; btn.textContent = '🚨 Procesar Baja'; }
+});
+
+actualizarTotalVivo();
+cargarDatos();
+</script>
+</body>
+</html>
